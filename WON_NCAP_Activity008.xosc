@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copyright (c) 2020-2022, Bayerische Motoren Werke Aktiengesellschaft (BMW AG) -->
+<OpenSCENARIO>
+	<FileHeader revMajor="1" revMinor="1" date="2021-07-09T10:00:00" description="ALKS Scenario 4.1_2 Swerving Lead Vehicle Template" author="BMW AG">
+		<License name="Creative Commons Attribution-ShareAlike 4.0 International Public License" resource="https://creativecommons.org/licenses/by-sa/4.0/legalcode" spdxId="CC-BY-SA-4.0" />
+	</FileHeader>
+	<ParameterDeclarations>
+		<ParameterDeclaration name="Road" parameterType="string" value="../xodr/e6mini.xodr"/>
+		<ParameterDeclaration name="Ego" parameterType="string" value="car_red"/>
+		<ParameterDeclaration name="Bicyclist" parameterType="string" value="bicycle"/>
+		<ParameterDeclaration name="EgoSpeed" parameterType="double" value="25"/>
+		<ParameterDeclaration name="_EgoSpeed" parameterType="double" value="${$EgoSpeed/3.6}"/>
+		<ParameterDeclaration name="BicyclistSpeed" parameterType="double" value="15"/>
+		<ParameterDeclaration name="_BicyclistSpeed" parameterType="double" value="${$BicyclistSpeed/3.6}"/>
+		<ParameterDeclaration name="EgoStartPosition" parameterType="double" value="50"/>
+		<ParameterDeclaration name="EgoLaneId" parameterType="integer" value="-4"/>
+		<ParameterDeclaration name="Overlap" parameterType="double" value="50"/>
+		<ParameterDeclaration name="EgoWidth" parameterType="double" value="2.0"/>
+		<ParameterDeclaration name="EgoInitialTTC" parameterType="double" value="6"/>
+		<ParameterDeclaration name="BicyclistOffset" parameterType="double" value="${$EgoWidth*(($Overlap-50)/100)}"/>
+		<ParameterDeclaration name="BicyclistAccelerationDistance" parameterType="double" value="3.5"/>
+		<ParameterDeclaration name="BicyclistSteadyStateDistance" parameterType="double" value="28"/>
+		<ParameterDeclaration name="TriggerDistance" parameterType="double" value="${$_EgoSpeed/$_BicyclistSpeed*(2*$BicyclistAccelerationDistance+$BicyclistSteadyStateDistance)-($BicyclistAccelerationDistance+$BicyclistSteadyStateDistance)}"/>
+		<ParameterDeclaration name="BicyclistStartPosition" parameterType="double" value="${$_EgoSpeed*$EgoInitialTTC+$TriggerDistance}"/>
+		<!-- <ParameterDeclaration name="BicyclistStartPosition" parameterType="double" value="${$TriggerDistance}"/> -->
+	</ParameterDeclarations>
+	<CatalogLocations>
+		<VehicleCatalog>
+			<Directory path="../xosc/Catalogs/Vehicles"/>
+		</VehicleCatalog>
+	</CatalogLocations>
+	<RoadNetwork>
+		<LogicFile filepath="../xodr/e6mini.xodr"/>
+		<SceneGraphFile filepath="../models/e6mini.osgb"/>
+	</RoadNetwork>
+	<Entities>
+		<ScenarioObject name="EgoVehicle">
+			<CatalogReference catalogName="VehicleCatalog" entryName="$Ego"/>
+		</ScenarioObject>
+		<ScenarioObject name="Bicyclist">
+			<CatalogReference catalogName="VehicleCatalog" entryName="$Bicyclist"/>
+		</ScenarioObject>
+	</Entities>
+	<Storyboard>
+		<Init>
+			<Actions>
+				<Private entityRef="EgoVehicle">
+					<PrivateAction>
+						<TeleportAction>
+							<Position>
+								<LanePosition roadId="0" laneId="$EgoLaneId" offset="0" s="$EgoStartPosition"/>
+							</Position>
+						</TeleportAction>
+					</PrivateAction>
+					<PrivateAction>
+						<LongitudinalAction>
+							<SpeedAction>
+								<SpeedActionDynamics dynamicsShape="step" dynamicsDimension="time" value="20"/>
+								<SpeedActionTarget>
+									<AbsoluteTargetSpeed value="$_EgoSpeed"/>
+								</SpeedActionTarget>
+							</SpeedAction>
+						</LongitudinalAction>
+					</PrivateAction>
+				</Private>
+
+				<Private entityRef="Bicyclist">
+					<PrivateAction>
+						<TeleportAction>
+							<Position>
+								<RelativeLanePosition entityRef="EgoVehicle" dLane="0" offset="$BicyclistOffset" ds="$BicyclistStartPosition" />
+							</Position>
+						</TeleportAction>
+					</PrivateAction>
+					<!--<PrivateAction>
+						<LongitudinalAction>
+							<SpeedAction>
+								<SpeedActionDynamics dynamicsDimension="time" dynamicsShape="linear" value="${2*$BicyclistAccelerationDistance/$_BicyclistSpeed}" />
+								<SpeedActionTarget>
+									<AbsoluteTargetSpeed value="$_BicyclistSpeed" />
+								</SpeedActionTarget>
+							</SpeedAction>
+						</LongitudinalAction>
+					</PrivateAction>-->
+				</Private>
+			</Actions>
+		</Init>
+		<Story name="Car_to_Bicyclist">
+			<Act name="Collision_Act">
+				<ManeuverGroup maximumExecutionCount="1" name="BicyclistAcceleration">
+					<Actors selectTriggeringEntities="false">
+						<EntityRef entityRef="Bicyclist" />
+					</Actors>
+					<Maneuver name="Bicyclist_Acceleration">
+						<Event name="Accelerating_Bicyclist" priority="overwrite">
+							<Action name="Bicyclist_Speed">
+								<PrivateAction>
+									<LongitudinalAction>
+										<SpeedAction>
+											<SpeedActionDynamics dynamicsDimension="time" dynamicsShape="linear" value="${2*$BicyclistAccelerationDistance/$_BicyclistSpeed}" />
+											<SpeedActionTarget>
+												<AbsoluteTargetSpeed value="$_BicyclistSpeed" />
+											</SpeedActionTarget>
+										</SpeedAction>
+									</LongitudinalAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
+								<ConditionGroup>
+									<Condition name="AtEgoApproaching" delay="0.0" conditionEdge="rising">
+										<ByEntityCondition>
+											<TriggeringEntities triggeringEntitiesRule="any">
+												<EntityRef entityRef="EgoVehicle" />
+											</TriggeringEntities>
+											<EntityCondition>
+												<RelativeDistanceCondition freespace="true" relativeDistanceType="longitudinal" value="$TriggerDistance" rule="lessThan" entityRef="Bicyclist"/>
+												
+											</EntityCondition>
+												<!--<EntityCondition>
+													<TraveledDistanceCondition value="$TriggerDistance"/>
+												</EntityCondition>-->
+											
+										</ByEntityCondition>
+									</Condition>
+								</ConditionGroup>
+			
+							</StartTrigger>
+							
+						</Event>
+					</Maneuver>
+				</ManeuverGroup>
+			</Act>
+		</Story>
+		<StopTrigger>
+			<ConditionGroup>
+				<Condition name="AfterCollisionWithVRU" delay="1" conditionEdge="none">
+					<ByEntityCondition>
+						<TriggeringEntities triggeringEntitiesRule="any">
+							<EntityRef entityRef="EgoVehicle" />
+						</TriggeringEntities>
+						<EntityCondition>
+							<CollisionCondition>
+								<EntityRef entityRef="Bicyclist" />
+							</CollisionCondition>
+						</EntityCondition>
+					</ByEntityCondition>
+				</Condition>
+				<Condition name="EnsureTraveledDistance" delay="0" conditionEdge="none">
+					<ByEntityCondition>
+						<TriggeringEntities triggeringEntitiesRule="any">
+							<EntityRef entityRef="EgoVehicle" />
+						</TriggeringEntities>
+						<EntityCondition>
+							<TraveledDistanceCondition value="${$_EgoSpeed*$EgoInitialTTC+$TriggerDistance}" />
+						</EntityCondition>
+					</ByEntityCondition>
+				</Condition>
+			</ConditionGroup>
+			<ConditionGroup>
+				<Condition name="AtSameSpeed" delay="0" conditionEdge="rising">
+					<ByEntityCondition>
+						<TriggeringEntities triggeringEntitiesRule="any">
+							<EntityRef entityRef="Bicyclist" />
+						</TriggeringEntities>
+						<EntityCondition>
+							<RelativeSpeedCondition value="2" rule="greaterThan" entityRef="EgoVehicle" />
+						</EntityCondition>
+					</ByEntityCondition>
+				</Condition>
+				<Condition name="EnsureTraveledDistance" delay="0" conditionEdge="none">
+					<ByEntityCondition>
+						<TriggeringEntities triggeringEntitiesRule="any">
+							<EntityRef entityRef="EgoVehicle" />
+						</TriggeringEntities>
+						<EntityCondition>
+							<TraveledDistanceCondition value="${$_EgoSpeed*$EgoInitialTTC+$TriggerDistance}" />
+						</EntityCondition>
+					</ByEntityCondition>
+				</Condition>
+			</ConditionGroup>
+			<ConditionGroup>
+				<Condition name="StopAtStandstill" delay="0" conditionEdge="rising">
+					<ByEntityCondition>
+						<TriggeringEntities triggeringEntitiesRule="any">
+							<EntityRef entityRef="EgoVehicle" />
+						</TriggeringEntities>
+						<EntityCondition>
+							<SpeedCondition value="0.1" rule="lessThan" />
+						</EntityCondition>
+					</ByEntityCondition>
+				</Condition>
+				<Condition name="EnsureTraveledDistance2" delay="0" conditionEdge="none">
+					<ByEntityCondition>
+						<TriggeringEntities triggeringEntitiesRule="any">
+							<EntityRef entityRef="EgoVehicle" />
+						</TriggeringEntities>
+						<EntityCondition>
+							<TraveledDistanceCondition value="${$_EgoSpeed*$EgoInitialTTC+$TriggerDistance}" />
+						</EntityCondition>
+					</ByEntityCondition>
+				</Condition>
+			</ConditionGroup>
+		</StopTrigger>
+	</Storyboard>
+</OpenSCENARIO>
