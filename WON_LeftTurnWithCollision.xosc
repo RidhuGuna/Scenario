@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSCENARIO>
+   <FileHeader revMajor="1"
+               revMinor="1"
+               date="2021-04-09T10:00:00"
+               description="Basic cut-in"
+               author="esmini-team"/>
+   <ParameterDeclarations>
+      <ParameterDeclaration name="HostVehicle" parameterType="string" value="car_white"/>
+	   <ParameterDeclaration name="EgoStart" parameterType="double" value="0"/>
+	   <ParameterDeclaration name="EgoSpeed" parameterType="double" value="20"/>
+	   <ParameterDeclaration name="_EgoSpeed" parameterType="double" value="${$EgoSpeed/3.6}"/>
+	   <ParameterDeclaration name="EgoLaneId" parameterType="integer" value="-1"/>
+	   <ParameterDeclaration name="TargetSpeedFactor" parameterType="double" value="1.0"/>
+   </ParameterDeclarations>
+   <CatalogLocations>
+	   <ManeuverCatalog>
+		   <Directory path="../xosc/Catalogs/Maneuvers"/>
+	   </ManeuverCatalog>
+      <VehicleCatalog>
+         <Directory path="../xosc/Catalogs/Vehicles"/>
+      </VehicleCatalog>
+	   <PedestrianCatalog>
+		   <Directory path="../xosc/Catalogs/Pedestrians"/>
+	   </PedestrianCatalog>
+	   <RouteCatalog>
+		   <Directory path="../xosc/Catalogs/Routes"/>
+	   </RouteCatalog>
+   </CatalogLocations>
+   <RoadNetwork>
+	   <LogicFile filepath="../xodr/fabriksgatan.xodr"/>
+   </RoadNetwork>
+   <Entities>
+      <ScenarioObject name="Ego">
+        <CatalogReference catalogName="VehicleCatalog" entryName="$HostVehicle"/>
+      </ScenarioObject>
+	   <ScenarioObject name="Pedestrian">
+		   <CatalogReference catalogName="PedestrianCatalog" entryName="pedestrian_adult"/>
+	   </ScenarioObject>
+   </Entities>
+	<Storyboard>
+		<Init>
+			<Actions>
+				<Private entityRef="Ego">
+					<PrivateAction>
+						<RoutingAction>
+							<AssignRouteAction>
+								<CatalogReference catalogName="RoutesAtFabriksgatan" entryName="TargetLeftTurnRoute"/>
+							</AssignRouteAction>
+						</RoutingAction>
+					</PrivateAction>
+					<PrivateAction>
+						<TeleportAction>
+							<Position>
+								<RoutePosition>
+									<RouteRef>
+										<CatalogReference catalogName="RoutesAtFabriksgatan" entryName="TargetLeftTurnRoute"/>
+									</RouteRef>
+									<InRoutePosition>
+										<FromLaneCoordinates pathS="0" laneId="-1"/>
+									</InRoutePosition>
+								</RoutePosition>
+							</Position>
+						</TeleportAction>
+					</PrivateAction>
+					<PrivateAction>
+						<LongitudinalAction>
+							<SpeedAction>
+								<SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time" />
+								<SpeedActionTarget>
+									<AbsoluteTargetSpeed value="$_EgoSpeed"/>
+								</SpeedActionTarget>
+							</SpeedAction>
+						</LongitudinalAction>
+					</PrivateAction>
+				</Private>
+				<Private entityRef="Pedestrian">
+					<PrivateAction>
+						<TeleportAction>
+							<Position>
+								<LanePosition roadId="1" laneId="-2" offset="-0.5" s="9" >
+									<Orientation type="relative" h="0" p="0" r="0" />
+								</LanePosition>
+							</Position>
+						</TeleportAction>
+					</PrivateAction>
+				</Private>
+			</Actions>
+		</Init>
+		<Story name="FarSideCollisionWithPedestrian">
+			<Act name="FarSideWithPedestrian">
+				<ManeuverGroup maximumExecutionCount="1" name="Pedestrian_Maneuvergroup">
+					<Actors selectTriggeringEntities="false">
+						<EntityRef entityRef="Pedestrian"/>
+					</Actors>
+					<Maneuver name="Pedestrian_Maneuver">
+						<Event maximumExecutionCount="1" name="Pedestrian_event" priority="overwrite">
+							<Action name="Walking_Speed">
+								<PrivateAction>
+									<LongitudinalAction>
+										<SpeedAction>
+											<SpeedActionDynamics dynamicsShape="linear" value="2" dynamicsDimension="rate"/>
+											<SpeedActionTarget>
+												<AbsoluteTargetSpeed value="2"/>
+											</SpeedActionTarget>
+										</SpeedAction>
+									</LongitudinalAction>
+								</PrivateAction>
+							</Action>
+							<Action name="Walking_route">
+								<PrivateAction>
+									<RoutingAction>
+										<FollowTrajectoryAction>
+											<Trajectory closed="false" name="Pedestrian_Trajectory">
+												<Shape>
+													<Polyline>
+														<Vertex>
+															<Position>
+																<LanePosition laneId="-2" offset="0" roadId="1" s="9" >
+																	<Orientation type="relative" h="0" p="0" r="0" />
+																</LanePosition>
+															</Position>
+														</Vertex>
+														<Vertex>
+															<Position>
+																<LanePosition laneId="-1" offset="0" roadId="1" s="9" >
+																	<Orientation type="relative" h="0" p="0" r="0" />
+																</LanePosition>
+															</Position>
+														</Vertex>
+														<Vertex>
+															<Position>
+																<LanePosition laneId="0" offset="0" roadId="1" s="9" >
+																	<Orientation type="relative" h="0" p="0" r="0" />
+																</LanePosition>
+															</Position>
+														</Vertex>
+														<Vertex>
+															<Position>
+																<LanePosition laneId="1" offset="0" roadId="1" s="9" >
+																	<Orientation type="relative" h="0" p="0" r="0" />
+																</LanePosition>
+															</Position>
+														</Vertex>
+														<Vertex>
+															<Position>
+																<LanePosition laneId="2" offset="0" roadId="1" s="9" >
+																	<Orientation type="relative" h="0" p="0" r="0" />
+																</LanePosition>
+															</Position>
+														</Vertex>
+														<Vertex>
+															<Position>
+																<LanePosition laneId="3" offset="0" roadId="1" s="9" >
+																	<Orientation type="relative" h="0" p="0" r="0" />
+																</LanePosition>
+															</Position>
+														</Vertex>
+													</Polyline>
+												</Shape>
+											</Trajectory>
+											<TimeReference>
+												<None/>
+											</TimeReference>
+											<TrajectoryFollowingMode followingMode="follow"/>
+										</FollowTrajectoryAction>
+									</RoutingAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
+								<ConditionGroup>
+									<Condition conditionEdge="rising" delay="0" name="ped_walk_event">
+										<ByEntityCondition>
+											<TriggeringEntities triggeringEntitiesRule="any">
+												<EntityRef entityRef="Ego"/>
+											</TriggeringEntities>
+											<EntityCondition>
+												<ReachPositionCondition tolerance="1.0">
+													<Position>
+														<LanePosition roadId ="1" laneId="-1"/>
+													</Position>
+												</ReachPositionCondition>
+											</EntityCondition>
+										</ByEntityCondition>
+									</Condition>
+								</ConditionGroup>
+							</StartTrigger>
+						</Event>
+					</Maneuver>
+				</ManeuverGroup>
+			</Act>
+		</Story>
+		<StopTrigger>
+			<ConditionGroup>
+				<Condition name="QuitingCondition" delay="0" conditionEdge="rising">
+					<ByEntityCondition>
+						<TriggeringEntities triggeringEntitiesRule="any">
+							<EntityRef entityRef="Pedestrian"/>
+						</TriggeringEntities>
+						<EntityCondition>
+							<ReachPositionCondition tolerance="1.0">
+								<Position>
+									<LanePosition roadId ="1" laneId="1" s="9"/>
+								</Position>
+							</ReachPositionCondition>
+						</EntityCondition>
+					</ByEntityCondition>
+				</Condition>
+			</ConditionGroup>
+		</StopTrigger>
+	</Storyboard>
+</OpenSCENARIO>
