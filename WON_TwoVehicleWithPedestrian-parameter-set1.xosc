@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<OpenSCENARIO>
+	<FileHeader revMajor="1" revMinor="2" date="2022-10-31T12:00:00" description="Parameter values for scenario" author="esmini-team" />
+	<ParameterValueDistribution>
+		<ScenarioFile filepath="WON_Task6.xosc" />
+		<Deterministic>
+			<DeterministicSingleParameterDistribution parameterName="HostVehicle">
+				<DistributionSet>
+					<Element value="car_yellow" />
+					<Element value="van_red" />
+				</DistributionSet>
+			</DeterministicSingleParameterDistribution>
+		</Deterministic>
+	</ParameterValueDistribution>
+</OpenSCENARIO>
