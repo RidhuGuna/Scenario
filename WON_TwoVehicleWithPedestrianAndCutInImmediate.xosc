@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<OpenSCENARIO>
+	<FileHeader revMajor="1"
+				revMinor="1"
+				date="2021-04-09T10:00:00"
+				description="Basic cut-in"
+				author="esmini-team"/>
+	<ParameterDeclarations>
+		<ParameterDeclaration name="HostVehicle" parameterType="string" value="car_white"/>
+		<ParameterDeclaration name="LeadVehicle" parameterType="string" value="car_red"/>
+		<ParameterDeclaration name="EgoStart" parameterType="double" value="50"/>
+		<ParameterDeclaration name="LeadVehicleStart" parameterType="double" value="40"/>
+		<ParameterDeclaration name="EgoSpeed" parameterType="double" value="36"/>
+		<ParameterDeclaration name="EgoLaneId" parameterType="integer" value="-4"/>
+		<ParameterDeclaration name="LeadVehicleLaneId" parameterType="integer" value="-3"/>
+		<ParameterDeclaration name="QuitCondition" parameterType="double" value="20"/>
+		<ParameterDeclaration name="TargetSpeedFactor" parameterType="double" value="1.4"/>
+		<ParameterDeclaration name="HeadwayTime_LaneChange" parameterType="double" value="0.4"/>
+	</ParameterDeclarations>
+	<CatalogLocations>
+		<VehicleCatalog>
+			<Directory path="../xosc/Catalogs/Vehicles"/>
+		</VehicleCatalog>
+		<PedestrianCatalog>
+			<Directory path="../xosc/Catalogs/Pedestrians"/>
+		</PedestrianCatalog>
+	</CatalogLocations>
+	<RoadNetwork>
+		<LogicFile filepath="../xodr/e6mini.xodr"/>
+		<SceneGraphFile filepath="../models/e6mini.osgb"/>
+	</RoadNetwork>
+	<Entities>
+		<ScenarioObject name="Ego">
+			<CatalogReference catalogName="VehicleCatalog" entryName="$HostVehicle"/>
+		</ScenarioObject>
+		<ScenarioObject name="LeadVehicle">
+			<CatalogReference catalogName="VehicleCatalog" entryName="$LeadVehicle"/>
+		</ScenarioObject>
+		<ScenarioObject name="Pedestrian">
+			<CatalogReference catalogName="PedestrianCatalog" entryName="pedestrian_adult"/>
+		</ScenarioObject>
+	</Entities>
+	<Storyboard>
+		<Init>
+			<Actions>
+				<Private entityRef="Ego">
+					<PrivateAction>
+						<TeleportAction>
+							<Position>
+								<LanePosition roadId="0" laneId="$EgoLaneId" offset="0" s="$EgoStart"/>
+							</Position>
+						</TeleportAction>
+					</PrivateAction>
+					<PrivateAction>
+						<LongitudinalAction>
+							<SpeedAction>
+								<SpeedActionDynamics dynamicsShape="step" dynamicsDimension="time" value="0.0"/>
+								<SpeedActionTarget>
+									<AbsoluteTargetSpeed value="${$EgoSpeed / 3.6}"/>
+								</SpeedActionTarget>
+							</SpeedAction>
+						</LongitudinalAction>
+					</PrivateAction>
+				</Private>
+
+				<Private entityRef="LeadVehicle">
+					<PrivateAction>
+						<TeleportAction>
+							<Position>
+								<LanePosition roadId="0" laneId="$LeadVehicleLaneId" offset="0" s="$LeadVehicleStart"/>
+							</Position>
+						</TeleportAction>
+					</PrivateAction>
+				</Private>
+				<Private entityRef="Pedestrian">
+					<PrivateAction>
+						<TeleportAction>
+							<Position>
+								<LanePosition laneId="-5" offset="-0.5" roadId="0" s="200" >
+									<Orientation type="relative" h="0" p="0" r="0" />
+								</LanePosition>
+							</Position>
+						</TeleportAction>
+					</PrivateAction>
+				</Private>
+			</Actions>
+		</Init>
+
+		<Story name="RTAPStory">
+			<Act name="RTAPWithPedestrian">
+				<ManeuverGroup maximumExecutionCount="1" name="CutInAndBrakeSequence">
+					<Actors selectTriggeringEntities="false">
+						<EntityRef entityRef="LeadVehicle"/>
+					</Actors>
+					<Maneuver name="CutInForLeadVehicle">
+						<Event name="OverTakerStartSpeedEvent" priority="overwrite">
+							<Action name="OverTakerStartSpeedAction">
+								<PrivateAction>
+									<LongitudinalAction>
+										<SpeedAction>
+											<SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time" />
+											<SpeedActionTarget>
+												<RelativeTargetSpeed entityRef="Ego"
+																	 value="$TargetSpeedFactor"
+																	 speedTargetValueType="factor"
+																	 continuous="true"/>
+											</SpeedActionTarget>
+										</SpeedAction>
+									</LongitudinalAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
+								<ConditionGroup>
+									<Condition name="OverTakerStartSpeedCondition"
+											   delay="0"
+											   conditionEdge="none">
+										<ByValueCondition>
+											<SimulationTimeCondition value="0" rule="greaterThan"/>
+										</ByValueCondition>
+									</Condition>
+								</ConditionGroup>
+							</StartTrigger>
+						</Event>
+						<Event name="LeadVehicleCutInEvent" priority="overwrite">
+
+							<Action name="LeadVehicleCutInAction">
+								<PrivateAction>
+									<LateralAction>
+										<LaneChangeAction>
+											<LaneChangeActionDynamics dynamicsShape="sinusoidal" value="3" dynamicsDimension="time"/>
+											<LaneChangeTarget>
+												<RelativeTargetLane entityRef="Ego" value="0"/>
+											</LaneChangeTarget>
+										</LaneChangeAction>
+									</LateralAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
+								<ConditionGroup>
+									<Condition name="CutInStartCondition" delay="0" conditionEdge="rising">
+										<ByEntityCondition>
+											<TriggeringEntities triggeringEntitiesRule="any">
+												<EntityRef entityRef="Ego"/>
+											</TriggeringEntities>
+											<EntityCondition>
+												<TimeHeadwayCondition entityRef="LeadVehicle"
+																	  value="$HeadwayTime_LaneChange"
+																	  freespace="false"
+																	  coordinateSystem="road"
+																	  relativeDistanceType="longitudinal"
+																	  rule="greaterThan"/>
+											</EntityCondition>
+										</ByEntityCondition>
+									</Condition>
+								</ConditionGroup>
+							</StartTrigger>
+						</Event>
+					</Maneuver>
+				</ManeuverGroup>
+
+
+
+				<ManeuverGroup maximumExecutionCount="1" name="Pedestrian_Maneuvergroup">
+					<Actors selectTriggeringEntities="false">
+						<EntityRef entityRef="Pedestrian"/>
+					</Actors>
+					<Maneuver name="Pedestrian_Maneuver">
+						<Event maximumExecutionCount="1" name="Pedestrian_event" priority="overwrite">
+							<Action name="Walking_Speed">
+								<PrivateAction>
+									<LongitudinalAction>
+										<SpeedAction>
+											<SpeedActionDynamics dynamicsShape="linear" value="2" dynamicsDimension="rate"/>
+											<SpeedActionTarget>
+												<AbsoluteTargetSpeed value="2"/>
+											</SpeedActionTarget>
+										</SpeedAction>
+									</LongitudinalAction>
+								</PrivateAction>
+							</Action>
+							<Action name="Walking_route">
+								<PrivateAction>
+									<RoutingAction>
+										<FollowTrajectoryAction>
+											<Trajectory closed="false" name="Pedestrian_Trajectory">
+												<Shape>
+													<Polyline>
+														<Vertex>
+															<Position>
+																<LanePosition laneId="-5" offset="-0.5" roadId="0" s="200" >
+																	<Orientation type="relative" h="0" p="0" r="0" />
+																</LanePosition>
+															</Position>
+														</Vertex>
+														<Vertex>
+															<Position>
+																<LanePosition laneId="-4" offset="0.5" roadId="0" s="200" >
+																	<Orientation type="relative" h="0" p="0" r="0" />
+																</LanePosition>
+															</Position>
+														</Vertex>
+														<Vertex>
+															<Position>
+																<LanePosition laneId="-1" offset="0.0" roadId="0" s="200" >
+																	<Orientation type="relative" h="1.57" p="0" r="0" />
+																</LanePosition>
+															</Position>
+														</Vertex>
+
+													</Polyline>
+												</Shape>
+											</Trajectory>
+											<TimeReference>
+												<None/>
+											</TimeReference>
+											<TrajectoryFollowingMode followingMode="follow"/>
+										</FollowTrajectoryAction>
+									</RoutingAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
+								<ConditionGroup>
+									<Condition conditionEdge="rising" delay="0" name="ped_walk_event">
+										<ByEntityCondition>
+											<TriggeringEntities triggeringEntitiesRule="any">
+												<EntityRef entityRef="Ego"/>
+											</TriggeringEntities>
+											<EntityCondition>
+												<TimeToCollisionCondition value="1.5"
+																	 freespace="true"
+																	 coordinateSystem="entity"
+																	 relativeDistanceType="longitudinal"
+																	 rule="lessThan" >
+													<TimeToCollisionConditionTarget >
+														<EntityRef entityRef="Pedestrian" />
+													</TimeToCollisionConditionTarget>
+												</TimeToCollisionCondition>
+											</EntityCondition>
+										</ByEntityCondition>
+									</Condition>
+								</ConditionGroup>
+							</StartTrigger>
+						</Event>
+					</Maneuver>
+				</ManeuverGroup>
+
+				<ManeuverGroup maximumExecutionCount="1" name="brake-for-ped_mangroup">
+					<Actors selectTriggeringEntities="false">
+						<EntityRef entityRef="Ego"/>
+					</Actors>
+					<Maneuver name="brake_Maneuver">
+						<Event name="brake_Event" priority="overwrite">
+							<Action name="brake_Action">
+								<PrivateAction>
+									<LongitudinalAction>
+										<SpeedAction>
+											<SpeedActionDynamics dynamicsShape="linear" value="-5.1" dynamicsDimension="rate"/>
+											<SpeedActionTarget>
+												<AbsoluteTargetSpeed value="0"/>
+											</SpeedActionTarget>
+										</SpeedAction>
+									</LongitudinalAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
+								<ConditionGroup>
+									<Condition name="brake_Condition" delay="0" conditionEdge="rising">
+										
+												<ByValueCondition>
+													<StoryboardElementStateCondition storyboardElementType="event" storyboardElementRef="Pedestrian_event" state="startTransition" />
+												</ByValueCondition>
+											
+									</Condition>
+								</ConditionGroup>
+							</StartTrigger>
+						</Event>
+					</Maneuver>
+				</ManeuverGroup>
+
+				<ManeuverGroup maximumExecutionCount="1" name="after_pedestrian_crossed">
+					<Actors selectTriggeringEntities="false">
+						<EntityRef entityRef="Ego"/>
+					</Actors>
+					<Maneuver name="continue_after_pedestrian_crossed">
+						<Event name="continue_Event" priority="overwrite">
+							<Action name="continue_Action">
+								<PrivateAction>
+									<LongitudinalAction>
+										<SpeedAction>
+											<SpeedActionDynamics dynamicsShape="linear" value="-5.1" dynamicsDimension="rate"/>
+											<SpeedActionTarget>
+												<AbsoluteTargetSpeed value="$EgoSpeed"/>
+											</SpeedActionTarget>
+										</SpeedAction>
+									</LongitudinalAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
+								<ConditionGroup>
+									<Condition name="continues_Condition" delay="0" conditionEdge="rising">
+										<ByEntityCondition>
+											<TriggeringEntities triggeringEntitiesRule="any">
+												<EntityRef entityRef="Pedestrian"/>
+											</TriggeringEntities>
+											<EntityCondition>
+												<TimeToCollisionCondition value="8"
+																	 freespace="true"
+																	 coordinateSystem="entity"
+																	 relativeDistanceType="longitudinal"
+																	 rule="greaterThan" >
+													<TimeToCollisionConditionTarget >
+														<EntityRef entityRef="Ego" />
+													</TimeToCollisionConditionTarget>
+												</TimeToCollisionCondition>
+											</EntityCondition>
+										</ByEntityCondition>
+									</Condition>
+								</ConditionGroup>
+							</StartTrigger>
+						</Event>
+					</Maneuver>
+				</ManeuverGroup>
+
+				<ManeuverGroup maximumExecutionCount="1" name="LeadVehicle1_Sequence">
+					<Actors selectTriggeringEntities="false">
+						<EntityRef entityRef="LeadVehicle"/>
+					</Actors>
+					<Maneuver name="LeadVehicle1_Seq">
+						<Event name="LeadVehicle1_Event" priority="overwrite">
+							<Action name="LeadVehicle1_Action">
+
+								<PrivateAction>
+
+									<LongitudinalAction>
+										<SpeedAction>
+											<SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time" />
+											<SpeedActionTarget>
+
+												<RelativeTargetSpeed entityRef="Ego" value="$TargetSpeedFactor"
+												speedTargetValueType="factor"
+												continuous="false"/>
+											</SpeedActionTarget>
+										</SpeedAction>
+									</LongitudinalAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
+								<ConditionGroup>
+									<Condition name="LeadVehicle1_Action_Condition"
+											   delay="0"
+											   conditionEdge="none">
+										<ByValueCondition>
+											<SimulationTimeCondition value="0" rule="greaterThan"/>
+										</ByValueCondition>
+									</Condition>
+								</ConditionGroup>
+							</StartTrigger>
+						</Event>
+					</Maneuver>
+				</ManeuverGroup>
+
+				<StartTrigger>
+					<ConditionGroup>
+						<Condition name="ActStartCondition" delay="0" conditionEdge="none">
+							<ByValueCondition>
+								<SimulationTimeCondition value="0" rule="greaterThan"/>
+							</ByValueCondition>
+						</Condition>
+					</ConditionGroup>
+				</StartTrigger>
+			</Act>
+		</Story>
+		<StopTrigger>
+			<ConditionGroup>
+				<Condition name="QuitCondition" delay="0" conditionEdge="rising">
+					<ByEntityCondition>
+						<TriggeringEntities triggeringEntitiesRule="any">
+							<EntityRef entityRef="Ego"/>
+						</TriggeringEntities>
+						<EntityCondition>
+							<TraveledDistanceCondition value="200">
+
+								<Position>
+									<LanePosition roadId="0" laneId="-1" s="0"/>
+								</Position>
+							</TraveledDistanceCondition>
+						</EntityCondition>
+					</ByEntityCondition>
+				</Condition>
+			</ConditionGroup>
+		</StopTrigger>
+
+	</Storyboard>
+</OpenSCENARIO>
