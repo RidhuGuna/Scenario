@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSCENARIO>
+   <FileHeader revMajor="1"
+               revMinor="1"
+               date="2021-04-09T10:00:00"
+               description="Basic cut-in"
+               author="esmini-team"/>
+   <ParameterDeclarations>
+      <ParameterDeclaration name="ego" parameterType="string" value="car_red"/>
+      <ParameterDeclaration name="random_vehicle" parameterType="string" value="car_yellow"/>
+	  <ParameterDeclaration name="stationary_vehicle" parameterType="string" value="car_blue"/>
+	   <ParameterDeclaration name="EgoSpeed" parameterType="double" value="10"/>
+	   <ParameterDeclaration name="EgoLaneId" parameterType="integer" value="-4"/>
+	   <ParameterDeclaration name="EgoStart" parameterType="integer" value="10"/>
+	   <ParameterDeclaration name="RandomVehicleSpeed" parameterType="double" value="10"/>
+	   <ParameterDeclaration name="RandomVehicleLaneId" parameterType="integer" value="-4"/>
+	   <ParameterDeclaration name="RandomVehicleStart" parameterType="integer" value="20"/>
+	   <ParameterDeclaration name="StationaryVehicleLaneId" parameterType="integer" value="-4"/>
+	   <ParameterDeclaration name="StationaryVehicleStart" parameterType="integer" value="200"/>
+   </ParameterDeclarations>
+   <CatalogLocations>
+      <VehicleCatalog>
+		  <Directory path="../xosc/Catalogs/Vehicles"/>
+      </VehicleCatalog>
+	  <PedestrianCatalog>
+		 <Directory path="../xosc/Catalogs/Pedestrians"/>
+	  </PedestrianCatalog>
+   </CatalogLocations>
+
+   <RoadNetwork>
+	   <LogicFile filepath="../xodr/e6mini.xodr"/>
+	   <SceneGraphFile filepath="../models/e6mini.osgb"/>
+   </RoadNetwork>
+   <Entities>
+      <ScenarioObject name="Ego">
+        <CatalogReference catalogName="VehicleCatalog" entryName="$ego"/>
+      </ScenarioObject>
+      <ScenarioObject name="Random_Vehicle">
+         <CatalogReference catalogName="VehicleCatalog" entryName="$random_vehicle"/>
+      </ScenarioObject>
+	   <ScenarioObject name="Stationary_Vehicle">
+		   <CatalogReference catalogName="VehicleCatalog" entryName="$stationary_vehicle"/>
+	   </ScenarioObject>
+   </Entities>
+	<Storyboard>
+		<Init>
+			<Actions>
+				<Private entityRef="Ego">
+					<PrivateAction>
+						<TeleportAction>
+							<Position>
+								<LanePosition roadId="0" laneId="$EgoLaneId" offset="0" s="$EgoStart"/>
+							</Position>
+						</TeleportAction>
+					</PrivateAction>
+					<PrivateAction>
+						<LongitudinalAction>
+							<SpeedAction>
+								<SpeedActionDynamics dynamicsShape="step" dynamicsDimension="time" value="0.0"/>
+								<SpeedActionTarget>
+									<AbsoluteTargetSpeed value="$EgoSpeed"/>
+								</SpeedActionTarget>
+							</SpeedAction>
+						</LongitudinalAction>
+					</PrivateAction>
+				</Private>
+
+				<Private entityRef="Random_Vehicle">
+					<PrivateAction>
+						<TeleportAction>
+							<Position>
+								<LanePosition roadId="0" laneId="$RandomVehicleLaneId" offset="0" s="$RandomVehicleStart"/>
+							</Position>
+						</TeleportAction>
+					</PrivateAction>
+					<PrivateAction>
+						<LongitudinalAction>
+							<SpeedAction>
+								<SpeedActionDynamics dynamicsShape="step" dynamicsDimension="time" value="0.0"/>
+								<SpeedActionTarget>
+									<AbsoluteTargetSpeed value="$RandomVehicleSpeed"/>
+								</SpeedActionTarget>
+							</SpeedAction>
+						</LongitudinalAction>
+					</PrivateAction>
+				</Private>
+				
+				<Private entityRef="Stationary_Vehicle">
+					<PrivateAction>
+						<TeleportAction>
+							<Position>
+								<LanePosition roadId="0" laneId="$StationaryVehicleLaneId" offset="-1" s="$StationaryVehicleStart"/>
+							</Position>
+						</TeleportAction>
+					</PrivateAction>
+				</Private>	
+			</Actions>
+		</Init>
+		<Story name="LeadVehicleWithStationaryStory">
+			<Act name="LeadVehicleWithStationaryAct">
+				<ManeuverGroup maximumExecutionCount="1" name="LeadVehicleManeuverGroup">
+					<Actors selectTriggeringEntities="false">
+						<EntityRef entityRef="Random_Vehicle"/>
+					</Actors>
+					<Maneuver name="VehicleToOver_Maneuver">
+						<Event name="OverTakerStartSpeedEvent" priority="overwrite">
+							<Action name="OverTakerStartSpeedAction">
+								<PrivateAction>
+									<LateralAction>
+										<LaneOffsetAction continuous="false">
+											<LaneOffsetActionDynamics maxLateralAcc="1" dynamicsShape="sinusoidal" />
+											<LaneOffsetTarget>
+												<AbsoluteTargetLaneOffset value="2"/>
+											</LaneOffsetTarget>
+										</LaneOffsetAction>
+									</LateralAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
+								<ConditionGroup>
+									<Condition name="OverTake_Condition" delay="0" conditionEdge="rising">
+										<ByEntityCondition>
+											<TriggeringEntities triggeringEntitiesRule="any">
+												<EntityRef entityRef="Random_Vehicle"/>
+											</TriggeringEntities>
+											<EntityCondition>
+												<TimeToCollisionCondition value="2"
+																	 freespace="true"
+																	 coordinateSystem="entity"
+																	 relativeDistanceType="longitudinal"
+																	 rule="lessThan" >
+													<TimeToCollisionConditionTarget >
+														<EntityRef entityRef="Stationary_Vehicle" />
+													</TimeToCollisionConditionTarget>
+												</TimeToCollisionCondition>
+											</EntityCondition>
+										</ByEntityCondition>
+									</Condition>									
+								</ConditionGroup>
+							</StartTrigger>
+						</Event>
+						<Event name="OverTakerStartSpeedEvent" priority="overwrite">
+							<Action name="OverTakerStartSpeedAction">
+								<PrivateAction>
+									<LateralAction>
+										<LaneOffsetAction continuous="false">
+											<LaneOffsetActionDynamics maxLateralAcc="1" dynamicsShape="sinusoidal" />
+											<LaneOffsetTarget>
+												<AbsoluteTargetLaneOffset value="0"/>
+											</LaneOffsetTarget>
+										</LaneOffsetAction>
+									</LateralAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
+								<ConditionGroup>
+									
+									<Condition name="PassedStationaryObject" delay="0" conditionEdge="rising">
+										<ByEntityCondition>
+											<TriggeringEntities triggeringEntitiesRule="any">
+												<EntityRef entityRef="Random_Vehicle"/>
+											</TriggeringEntities>
+											<EntityCondition>
+												<RelativeDistanceCondition entityRef="Stationary_Vehicle"
+																		   value="5"
+																		   rule="greaterThan"
+																		   relativeDistanceType="longitudinal"/>
+											</EntityCondition>
+										</ByEntityCondition>
+									</Condition>
+								</ConditionGroup>
+							</StartTrigger>
+						</Event>
+					</Maneuver>
+				</ManeuverGroup>
+				<ManeuverGroup maximumExecutionCount="1" name="Follow_LeadVehicle">
+					<Actors selectTriggeringEntities="false">
+						<EntityRef entityRef="Ego"/>
+					</Actors>
+					<Maneuver name="FollowLeadVehicle_Maneuver">
+						<Event name="FollowEvent" priority="overwrite">
+
+							<Action name="EgoLaneChangeAction">
+								<PrivateAction>
+									<LateralAction>
+										<LaneOffsetAction continuous="false">
+											<LaneOffsetActionDynamics maxLateralAcc="1" dynamicsShape="sinusoidal" />
+											<LaneOffsetTarget>
+												<AbsoluteTargetLaneOffset value="2"/>
+											</LaneOffsetTarget>
+										</LaneOffsetAction>
+									</LateralAction>
+								</PrivateAction>
+							</Action>
+
+							<StartTrigger>
+								<ConditionGroup>
+									<Condition name="Stop_Ego_Condition" delay="0" conditionEdge="rising">
+										<ByValueCondition>
+											<StoryboardElementStateCondition storyboardElementType="action" storyboardElementRef="OverTakerStartSpeedAction" state="startTransition"/>
+										</ByValueCondition>
+									</Condition>
+								</ConditionGroup>
+							</StartTrigger>
+						</Event>
+						<Event name="EgoBackToInitial" priority="overwrite">
+							<Action name="EgoBackToInitialAction">
+								<PrivateAction>
+									<LateralAction>
+										<LaneOffsetAction continuous="false">
+											<LaneOffsetActionDynamics maxLateralAcc="1" dynamicsShape="sinusoidal" />
+											<LaneOffsetTarget>
+												<AbsoluteTargetLaneOffset value="0"/>
+											</LaneOffsetTarget>
+										</LaneOffsetAction>
+									</LateralAction>
+								</PrivateAction>
+							</Action>
+							<StartTrigger>
+								<ConditionGroup>
+
+									<Condition name="PassedStationaryObject" delay="0" conditionEdge="rising">
+										<ByEntityCondition>
+											<TriggeringEntities triggeringEntitiesRule="any">
+												<EntityRef entityRef="Ego"/>
+											</TriggeringEntities>
+											<EntityCondition>
+												<RelativeDistanceCondition entityRef="Stationary_Vehicle"
+																		   value="5"
+																		   rule="greaterThan"
+																		   relativeDistanceType="longitudinal"/>
+											</EntityCondition>
+										</ByEntityCondition>
+									</Condition>
+								</ConditionGroup>
+							</StartTrigger>
+						</Event>
+					</Maneuver>
+				</ManeuverGroup>
+			</Act>
+		</Story>
+	</Storyboard>
+</OpenSCENARIO>
