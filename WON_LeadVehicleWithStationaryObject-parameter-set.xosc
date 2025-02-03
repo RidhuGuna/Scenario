@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<OpenSCENARIO>
+	<FileHeader revMajor="1" revMinor="2" date="2022-10-31T12:00:00" description="Parameter values for scenario" author="esmini-team" />
+	<ParameterValueDistribution>
+		<ScenarioFile filepath="WON_LeadVehicleWithStationaryObject.xosc" />
+		<Deterministic>
+			<DeterministicMultiParameterDistribution>
+				<ValueSetDistribution>
+					<ParameterValueSet>
+						<ParameterAssignment parameterRef="EgoStart" value="30" />
+						<ParameterAssignment parameterRef="RandomVehicleStart" value="15" />
+					</ParameterValueSet>
+					<ParameterValueSet>
+						<ParameterAssignment parameterRef="EgoStart" value="15" />
+						<ParameterAssignment parameterRef="RandomVehicleStart" value="25" />
+					</ParameterValueSet>
+					<ParameterValueSet>
+						<ParameterAssignment parameterRef="ego" value="car_red" />
+						<ParameterAssignment parameterRef="random_vehicle" value="car_blue" />
+					</ParameterValueSet>
+					<ParameterValueSet>
+						<ParameterAssignment parameterRef="ego" value="car_white" />
+						<ParameterAssignment parameterRef="random_vehicle" value="car_blue" />
+					</ParameterValueSet>
+				</ValueSetDistribution>
+			</DeterministicMultiParameterDistribution>
+			<DeterministicSingleParameterDistribution parameterName="StationaryVehicleStart">
+				<DistributionSet>
+					<Element value="300" />
+					<Element value="100" />
+				</DistributionSet>
+			</DeterministicSingleParameterDistribution>
+
+		</Deterministic>
+	</ParameterValueDistribution>
+</OpenSCENARIO>
