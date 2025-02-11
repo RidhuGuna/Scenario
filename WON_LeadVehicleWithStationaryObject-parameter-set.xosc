@@ -2,25 +2,35 @@
 <OpenSCENARIO>
 	<FileHeader revMajor="1" revMinor="2" date="2022-10-31T12:00:00" description="Parameter values for scenario" author="esmini-team" />
 	<ParameterValueDistribution>
-		<ScenarioFile filepath="WON_LeadVehicleWithStationaryObject.xosc" />
+		<ScenarioFile filepath="WON_LeadVehicleWithStationaryObject1.xosc" />
 		<Deterministic>
 			<DeterministicMultiParameterDistribution>
 				<ValueSetDistribution>
 					<ParameterValueSet>
 						<ParameterAssignment parameterRef="EgoStart" value="30" />
-						<ParameterAssignment parameterRef="RandomVehicleStart" value="15" />
 					</ParameterValueSet>
 					<ParameterValueSet>
-						<ParameterAssignment parameterRef="EgoStart" value="15" />
-						<ParameterAssignment parameterRef="RandomVehicleStart" value="25" />
+						<ParameterAssignment parameterRef="EgoStart" value="15" />						
+					</ParameterValueSet>
+					<!--<ParameterValueSet>
+						<ParameterAssignment parameterRef="EgoVehicle" value="car_red" />
+						<ParameterAssignment parameterRef="LeadVehicle" value="car_blue" />
 					</ParameterValueSet>
 					<ParameterValueSet>
-						<ParameterAssignment parameterRef="ego" value="car_red" />
-						<ParameterAssignment parameterRef="random_vehicle" value="car_blue" />
+						<ParameterAssignment parameterRef="EgoVehicle" value="car_white" />
+						<ParameterAssignment parameterRef="LeadVehicle" value="car_blue" />
+					</ParameterValueSet>-->
+					<ParameterValueSet>
+						<ParameterAssignment parameterRef="Road" value="../xodr/curves_elevation.xodr" />
+						<ParameterAssignment parameterRef="RoadId" value="1" />
+						<ParameterAssignment parameterRef="EgoLaneId" value="-1" />
+						<ParameterAssignment parameterRef="StationaryVehicleLaneId" value="-1" />
 					</ParameterValueSet>
 					<ParameterValueSet>
-						<ParameterAssignment parameterRef="ego" value="car_white" />
-						<ParameterAssignment parameterRef="random_vehicle" value="car_blue" />
+						<ParameterAssignment parameterRef="Road" value="../xodr/straight_500m.xodr" />
+						<ParameterAssignment parameterRef="RoadId" value="1" />
+						<ParameterAssignment parameterRef="EgoLaneId" value="-1" />
+						<ParameterAssignment parameterRef="StationaryVehicleLaneId" value="-1" />
 					</ParameterValueSet>
 				</ValueSetDistribution>
 			</DeterministicMultiParameterDistribution>
@@ -30,7 +40,27 @@
 					<Element value="100" />
 				</DistributionSet>
 			</DeterministicSingleParameterDistribution>
-
+			<DeterministicSingleParameterDistribution parameterName="_EgoSpeed">
+				<DistributionRange stepWidth="20">
+					<Range lowerLimit="0" upperLimit="150" />
+				</DistributionRange>
+			</DeterministicSingleParameterDistribution>
+			<DeterministicSingleParameterDistribution parameterName="_LeadVehicleSpeedAtStarting">
+				<DistributionRange stepWidth="20">
+					<Range lowerLimit="-70" upperLimit="30" />
+				</DistributionRange>
+			</DeterministicSingleParameterDistribution>
+			<DeterministicSingleParameterDistribution parameterName="_LeadVehicleRelativeTimeDistanceAtStart">
+				<DistributionRange stepWidth="1">
+					<Range lowerLimit="1" upperLimit="5" />
+				</DistributionRange>
+			</DeterministicSingleParameterDistribution>
+			<DeterministicSingleParameterDistribution parameterName="_LeadVehicleRelativeTimeDistance">
+				<DistributionRange stepWidth="1">
+					<Range lowerLimit="2" upperLimit="4" />
+				</DistributionRange>
+			</DeterministicSingleParameterDistribution>
+			
 		</Deterministic>
 	</ParameterValueDistribution>
 </OpenSCENARIO>
