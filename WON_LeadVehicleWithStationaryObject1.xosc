@@ -121,7 +121,7 @@
 						<EntityRef entityRef="Lead_Vehicle"/>
 					</Actors>
 					<Maneuver name="LeadVehicleWithLeadAndSlowDownDuration">
-						<!--Lead and Slow down Maneuver-->
+						<!--Lead and Slow down Event-->
 						<Event name="LeadVehicleWithLeadAndSlowDownDurationEvent" priority="overwrite">
 							<Action name="LeadAndSlowDownDuration">
 								<PrivateAction>
@@ -223,6 +223,7 @@
 						<EntityRef entityRef="Ego"/>
 					</Actors>
 					<Maneuver name="EgoOverTaking_Maneuver">
+						<!--Ego should OverTake the Lead Vehicle without hitting-->
 						<Event name="EgoOverTaking" priority="overwrite">
 							<Action name="EgoOverTakingAction">
 								<PrivateAction>
@@ -259,6 +260,7 @@
 								</ConditionGroup>
 							</StartTrigger>
 						</Event>
+						<!-- After Overtaken Ego should go back to Initial state-->
 						<Event name="EgoBackToInitial" priority="overwrite">
 							<Action name="EgoBackToInitialAction">
 								<PrivateAction>
